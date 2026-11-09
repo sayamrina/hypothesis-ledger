@@ -59,7 +59,7 @@ def add_record(g, item, rec, run):
     g.add((assessment, HL.design, HL[ans.get("design", "unclear")]))
     g.add((assessment, RDFS.comment, Literal(ans["rationale"])))
     g.add((assessment, PROV.wasGeneratedBy, run))
-    if item["gold"] != "mixed":
+    if item["gold"] in ("supported", "questioned", "undecided"):
         g.add((assessment, HL.expertVerdict, HL[item["gold"]]))
 
     for k, c in enumerate(ans.get("claims", [])):

@@ -9,3 +9,4 @@ scikit-learn
 scipy
 matplotlib
 pytest
+streamlit>=1.39

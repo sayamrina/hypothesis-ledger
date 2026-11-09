@@ -40,6 +40,7 @@ Semantic Scholar ──────┘                                │
 | Graph | `src/build_graph.py`, `shapes/ledger_shapes.ttl` | Studies and hypotheses are linked to their ORKG resources. Each claim carries its quote (`prov:value`), its source DOI (`prov:wasDerivedFrom`) and the extraction run (`prov:wasGeneratedBy`). SHACL checks that every claim has exactly one quote and one source, and that verdicts use the allowed values. 7,720 triples; SHACL conforms. |
 | Query | `queries/*.rq`, `src/query.py` | Disagreements with the experts (with the quote the model relied on), support by study design, claims whose quote could not be verified. |
 | Judge | `src/judge.py` | A second GPT-4o-mini call rates whether each verdict is correct, without seeing the expert label. |
+| Page data | `src/export_page_data.py` | Writes `docs/studies.json` for the project page (one record per study, both verdicts, one verified quote). |
 | Evaluate | `src/evaluate.py` | Accuracy, macro-F1, McNemar test, provenance, design agreement, support shares, Fisher tests, judge agreement, causal graph. Output: `results/metrics.json`, `results/causal_graph.png`. |
 
 ## Results

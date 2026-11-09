@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hypothesis Ledger</title>
+<meta name="description" content="A pilot that lets a language model read invasion biology abstracts, extract causal claims with verbatim evidence, and judge hypotheses, compared with expert labels from Hi Knowledge.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #e8ede6;
+  --sheet: #f4f6f1;
+  --ink: #1d2a2c;
+  --muted: #56645f;
+  --rule: #c4cdc3;
+  --river: #1f6680;
+  --supported: #4b7a35;
+  --questioned: #6b4a91;
+  --undecided: #a39d93;
+  --mark: #dfe8c9;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #151c1d;
+    --sheet: #1c2526;
+    --ink: #e2e8e3;
+    --muted: #9aa8a2;
+    --rule: #33403f;
+    --river: #7cc0d6;
+    --supported: #86b96b;
+    --questioned: #b499db;
+    --undecided: #7d786f;
+    --mark: #34402a;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 1.0625rem/1.62 "Newsreader", Georgia, serif;
+  font-optical-sizing: auto;
+}
+a { color: var(--river); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--river); outline-offset: 2px; border-radius: 2px; }
+
+.topbar {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 12px 20px; border-bottom: 1px solid var(--rule);
+  font: 500 0.92rem/1.3 "Instrument Sans", system-ui, sans-serif;
+}
+.topbar b { font-weight: 600; letter-spacing: 0.01em; }
+.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
+.topbar nav a { color: var(--ink); text-decoration: none; }
+.topbar nav a:hover { color: var(--river); text-decoration: underline; }
+.banner {
+  font: 400 0.86rem/1.4 "Instrument Sans", system-ui, sans-serif; color: var(--muted);
+  padding: 7px 20px; border-bottom: 1px solid var(--rule); background: var(--sheet);
+}
+
+main { max-width: 1060px; margin: 0 auto; padding: 0 20px 72px; }
+.col { max-width: 40rem; }
+
+header.hero { padding: 56px 0 8px; }
+h1 {
+  font-weight: 500; font-size: clamp(2.4rem, 6vw, 4rem); line-height: 1.02;
+  letter-spacing: -0.02em; margin: 0 0 18px;
+}
+.lede { font-size: 1.28rem; line-height: 1.45; margin: 0 0 10px; max-width: 36rem; }
+.byline { font: 400 0.95rem/1.5 "Instrument Sans", system-ui, sans-serif; color: var(--muted); margin: 0; }
+
+/* the ledger: one mark per study */
+.ledger {
+  margin: 40px 0 8px; padding: 22px 22px 18px; background: var(--sheet);
+  border: 1px solid var(--rule);
+}
+.ledger-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px; align-items: baseline; }
+.ledger-head h2 { font-size: 1.35rem; font-weight: 500; margin: 0; }
+.key { display: flex; gap: 16px; flex-wrap: wrap; font: 400 0.88rem/1.3 "Instrument Sans", system-ui, sans-serif; color: var(--muted); }
+.key span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
+.key .s::before { background: var(--supported); }
+.key .q::before { background: var(--questioned); }
+.key .u::before { background: var(--undecided); }
+.hyp { margin-top: 22px; }
+.hyp h3 { font: 600 0.95rem/1.3 "Instrument Sans", system-ui, sans-serif; margin: 0 0 2px; }
+.hyp p.def { margin: 0 0 10px; color: var(--muted); font-size: 0.98rem; font-style: italic; }
+.group { display: grid; grid-template-columns: 8.5rem 1fr; gap: 6px 14px; align-items: center; margin-bottom: 10px; }
+.group .lab { font: 400 0.84rem/1.25 "Instrument Sans", system-ui, sans-serif; color: var(--muted); }
+.ticks { display: flex; flex-wrap: wrap; gap: 3px; }
+.tick {
+  width: 13px; height: 30px; padding: 0; border: 0; cursor: pointer; background: none;
+  display: grid; grid-template-rows: 1fr 1fr; gap: 2px;
+}
+.tick i, .tick em { display: block; }
+.tick i { border-radius: 1px 1px 0 0; }
+.tick em { border-radius: 0 0 1px 1px; opacity: 0.75; }
+.tick[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 1px; }
+.v-supported { background: var(--supported); }
+.v-questioned { background: var(--questioned); }
+.v-undecided { background: var(--undecided); }
+.v-mixed { background: repeating-linear-gradient(45deg, var(--undecided) 0 2px, transparent 2px 4px); }
+.howto { font: 400 0.86rem/1.4 "Instrument Sans", system-ui, sans-serif; color: var(--muted); margin: 6px 0 0; }
+
+.record {
+  margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 14px; min-height: 9rem;
+}
+.record h4 { font-size: 1.1rem; font-weight: 500; margin: 0 0 6px; line-height: 1.35; }
+.record .verdicts { font: 400 0.9rem/1.5 "Instrument Sans", system-ui, sans-serif; margin: 0 0 8px; }
+.record blockquote {
+  margin: 0 0 8px; padding: 2px 0 2px 14px; border-left: 3px solid var(--supported);
+}
+.record blockquote mark { background: var(--mark); color: inherit; padding: 0 2px; }
+.record .why { color: var(--muted); font-size: 0.97rem; margin: 0 0 6px; }
+.record .src { font: 400 0.86rem/1.4 "Instrument Sans", system-ui, sans-serif; margin: 0; }
+
+section { margin-top: 64px; }
+h2.sec { font-weight: 500; font-size: 1.85rem; line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 14px; }
+p { margin: 0 0 14px; }
+ol.steps { padding-left: 1.4rem; margin: 0; }
+ol.steps li { margin-bottom: 12px; padding-left: 4px; }
+ol.steps li::marker { font: 600 0.95rem "Instrument Sans", system-ui, sans-serif; color: var(--river); }
+
+table { border-collapse: collapse; width: 100%; font: 400 0.95rem/1.4 "Instrument Sans", system-ui, sans-serif; margin: 6px 0 16px; }
+th, td { text-align: left; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.tablewrap { overflow-x: auto; }
+
+pre {
+  font: 400 0.8rem/1.55 "JetBrains Mono", ui-monospace, monospace; background: var(--sheet);
+  border: 1px solid var(--rule); padding: 16px; overflow-x: auto; margin: 6px 0 14px;
+}
+pre .c { color: var(--muted); }
+pre .bad { background: var(--mark); }
+figure { margin: 10px 0 18px; }
+figure img { width: 100%; max-width: 760px; display: block; border: 1px solid var(--rule); background: #fff; }
+figcaption { font: 400 0.88rem/1.45 "Instrument Sans", system-ui, sans-serif; color: var(--muted); margin-top: 6px; max-width: 40rem; }
+.split { display: grid; grid-template-columns: minmax(0, 40rem) minmax(0, 1fr); gap: 40px; align-items: start; }
+.aside { font: 400 0.92rem/1.5 "Instrument Sans", system-ui, sans-serif; color: var(--muted); border-left: 1px solid var(--rule); padding-left: 18px; }
+footer { margin-top: 72px; padding-top: 18px; border-top: 1px solid var(--rule); font: 400 0.88rem/1.5 "Instrument Sans", system-ui, sans-serif; color: var(--muted); }
+footer p { max-width: 46rem; }
+
+@media (max-width: 760px) {
+  header.hero { padding-top: 36px; }
+  .group { grid-template-columns: 1fr; gap: 4px; }
+  .split { grid-template-columns: 1fr; gap: 12px; }
+  .aside { border-left: 0; padding-left: 0; }
+  .topbar { flex-wrap: wrap; padding: 10px 16px; }
+  .topbar nav { gap: 14px; font-size: 0.86rem; }
+  .banner { padding: 7px 16px; }
+  .ledger { padding: 16px 14px; margin-left: -6px; margin-right: -6px; }
+  .tick { width: 12px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .record.fresh { animation: show 0.25s ease-out; }
+  @keyframes show { from { opacity: 0.4; } to { opacity: 1; } }
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <b>Hypothesis Ledger</b>
+  <nav aria-label="Project links">
+    <a href="https://github.com/sayamrina/hypothesis-ledger">Code and data</a>
+    <a href="#results">Results</a>
+    <a href="#limits">Limitations</a>
+  </nav>
+</div>
+<div class="banner">This website was developed by Amrina as part of a portfolio. <a href="https://sayamrina.github.io/" target="_blank" rel="noopener">View the portfolio</a></div>
+
+<main>
+<header class="hero">
+  <h1>Hypothesis Ledger</h1>
+  <p class="lede">Can a language model read ecology abstracts, pull out their causal claims with the exact sentence that supports each one, and tell whether a hypothesis holds, the way experts did?</p>
+  <p class="byline">A pilot by Amrina on 144 invasion biology studies, checked against the expert labels of the Hi Knowledge initiative in the Open Research Knowledge Graph.</p>
+</header>
+
+<div class="ledger" id="ledger">
+  <div class="ledger-head">
+    <h2>One mark per study</h2>
+    <div class="key" aria-hidden="true"><span class="s">supported</span><span class="q">questioned</span><span class="u">undecided</span></div>
+  </div>
+  <p class="howto">Top half: what the experts recorded. Bottom half: what the model concluded from the abstract. Rows group studies by the design the model read from the abstract. Hatched marks are papers whose expert labels differ between species. Select a mark to read the record.</p>
+  <div id="hyps"></div>
+  <div class="record" id="record" aria-live="polite"></div>
+</div>
+
+<section id="how">
+  <div class="split">
+    <div>
+      <h2 class="sec">How a study becomes a record</h2>
+      <ol class="steps">
+        <li><b>Expert labels.</b> The Hi Knowledge comparisons in the Open Research Knowledge Graph list 318 papers on the enemy release and biotic resistance hypotheses, each marked as supporting, questioning or undecided, with habitat and research method.</li>
+        <li><b>Abstracts.</b> Missing DOIs are resolved by title on Crossref; abstracts come from OpenAlex, Crossref or Semantic Scholar. 144 paper and hypothesis pairs have one.</li>
+        <li><b>Extraction.</b> GPT-4o-mini returns structured output: every causal claim with cause, effect, direction, organism, habitat and a verbatim quote, then the study design and a verdict. Quotes that are not in the abstract go back to the model once for correction.</li>
+        <li><b>Knowledge graph.</b> Each claim becomes RDF linked to the ORKG study and hypothesis, with PROV-O for the quote, the source DOI and the extraction run. SHACL shapes check that no claim is stored without a quote and a source.</li>
+        <li><b>Comparison.</b> Verdicts are scored against the experts, a second model call acts as judge, and SPARQL queries answer questions such as "where does the model disagree, and which sentence did it rely on?"</li>
+      </ol>
+    </div>
+    <p class="aside">The verdict was also produced in a second condition, directly and without the claims step, to see whether writing out the claims first changes the answer.</p>
+  </div>
+</section>
+
+<section id="results">
+  <h2 class="sec">What came out</h2>
+  <div class="col">
+    <p>On the 131 studies with a single expert label, the model agreed with the experts in three of four cases. Writing out the claims first did not raise accuracy, but it recognised more mixed results as undecided.</p>
+  </div>
+  <div class="tablewrap col">
+    <table>
+      <thead><tr><th>Condition</th><th class="num">Accuracy</th><th class="num">Macro-F1</th><th class="num">Undecided found (of 20)</th></tr></thead>
+      <tbody>
+        <tr><td>Always the most frequent label</td><td class="num">0.43</td><td class="num">–</td><td class="num">–</td></tr>
+        <tr><td>Verdict directly</td><td class="num">0.76</td><td class="num">0.60</td><td class="num">2</td></tr>
+        <tr><td>Claims first, then verdict</td><td class="num">0.75</td><td class="num">0.66</td><td class="num">7</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col">
+    <p>Of 450 extracted claims, 99.3% carry a quote that appears word for word in the abstract after one correction round; the rest are flagged in the graph rather than dropped. The study design the model read from the abstract matched the experts' method label in 91% of studies.</p>
+    <p>The most interesting result sits one level up, in the synthesis. Whether a hypothesis looks supported depends on how it was tested, and in opposite directions for the two hypotheses:</p>
+  </div>
+  <div class="tablewrap col">
+    <table>
+      <thead><tr><th>Expert labels</th><th class="num">Experimental studies supporting</th><th class="num">Observational studies supporting</th><th class="num">Fisher p</th></tr></thead>
+      <tbody>
+        <tr><td>Enemy release</td><td class="num">4 of 13</td><td class="num">25 of 34</td><td class="num">.017</td></tr>
+        <tr><td>Biotic resistance</td><td class="num">16 of 28</td><td class="num">6 of 27</td><td class="num">.013</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col">
+    <p>The model's verdicts show the same two directions, but weaker (p = .12 and .10), and it rates biotic resistance as supported more often than the experts did (55% against 42%). A synthesis that pools experiments and field comparisons answers a different causal question than it seems to, and that is exactly the kind of condition an assistant for hypothesis assessment has to keep visible.</p>
+    <p>A second model call asked to judge the verdicts called 85.5% of them correct; 74.8% were. Its agreement with the expert check was only slightly better than chance (Cohen's κ = 0.20), so it cannot replace that check.</p>
+  </div>
+</section>
+
+<section id="sign">
+  <h2 class="sec">Where it breaks: the direction of an effect</h2>
+  <div class="col">
+    <p>The weak point is the sign of a causal claim. In the record below, more plant diversity means more resistance to the invader, so its effect on invader establishment should be "decreases". The model wrote "increases", because the sentence talks about resistance. Across all studies it coded enemy pressure as increasing invader performance 30 times and decreasing it 21 times.</p>
+  </div>
+<pre><span class="c"># from results/ledger.ttl</span>
+hl:claim_R52077_biotic_resistance_0 a hl:CausalClaim ;
+    prov:value "Functional group identity and diversity of resident plant communities
+                are good indicators of biotic resistance to invasion by introduced
+                Phragmites australis." ;
+    prov:wasDerivedFrom &lt;https://doi.org/10.1111/1365-2745.12016&gt; ;
+    hl:causeNode  hl:native_diversity ;
+    hl:effectNode hl:invader_establishment ;
+<span class="bad">    hl:direction  hl:increases ;</span>         <span class="c"># should be hl:decreases</span>
+    hl:quoteVerified true .</pre>
+  <figure>
+    <img src="causal_graph.png" alt="Network of causal claim categories. The thickest links run from native diversity to invader abundance and establishment, and from enemy pressure to invader performance and abundance." width="1350" height="900" loading="lazy">
+    <figcaption>Which factors the studies link to which outcomes, weighted by the number of studies. The direction is left out on purpose, because it is not yet reliable. The next step would be to extract the variable first and its change second, with a defined polarity for each variable.</figcaption>
+  </figure>
+</section>
+
+<section id="limits">
+  <h2 class="sec">Limitations</h2>
+  <div class="col">
+    <p>The experts read full texts; the model read abstracts, so some disagreements are probably caused by information that is not in the abstract. Only 144 of 318 papers had a retrievable abstract, and terrestrial studies dominate, so habitats could not be compared. One model, one run at temperature 0, no prompt tuning on a separate set. The categories for the causal graph were chosen before the run.</p>
+  </div>
+</section>
+
+<footer>
+  <p>Expert labels: Hi Knowledge data in the Open Research Knowledge Graph (TIB), CC BY-SA; Jeschke, J. M. &amp; Heger, T. (Eds.) (2018), <i>Invasion Biology: Hypotheses and Evidence</i>, CABI. Quotes are short spans from the abstracts of the cited studies, each linked to its DOI. Code under MIT on <a href="https://github.com/sayamrina/hypothesis-ledger">GitHub</a>.</p>
+  <p>This website was built by Amrina, with AI as a supporting tool for coding.</p>
+</footer>
+</main>
+
+<script>
+const HYP = {
+  enemy_release: ["Enemy release", "The absence of enemies in the exotic range is a cause of invasion success."],
+  biotic_resistance: ["Biotic resistance", "An ecosystem with high biodiversity is more resistant against non-native species than one with lower biodiversity."],
+};
+const DESIGN = [["experimental", "Experimental"], ["observational", "Observational"], ["other", "Other or unclear"]];
+const record = document.getElementById("record");
+let selected = null;
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c])); }
+
+function show(row, btn) {
+  if (selected) selected.setAttribute("aria-pressed", "false");
+  selected = btn; btn.setAttribute("aria-pressed", "true");
+  const agree = row.expert === "mixed" ? "experts disagree between species" : (row.expert === row.llm ? "agrees with the experts" : "differs from the experts");
+  const link = row.doi ? `<a href="https://doi.org/${esc(row.doi)}" target="_blank" rel="noopener">doi.org/${esc(row.doi)}</a>` : "no DOI";
+  record.innerHTML = `
+    <h4>${esc(row.t)}</h4>
+    <p class="verdicts">Experts: <b>${esc(row.expert)}</b>. Model: <b>${esc(row.llm)}</b>, ${agree}. ${row.n} causal claims, read as ${esc(row.design.replace(/_/g, " "))}.</p>
+    ${row.q ? `<blockquote><mark>${esc(row.q)}</mark></blockquote>` : ""}
+    <p class="why">${esc(row.why)}</p>
+    <p class="src">${link}, <a href="https://orkg.org/paper/${esc(row.orkg)}" target="_blank" rel="noopener">expert record in ORKG</a></p>`;
+  record.classList.remove("fresh"); void record.offsetWidth; record.classList.add("fresh");
+}
+
+fetch("studies.json").then(r => r.json()).then(rows => {
+  const order = {supported: 0, questioned: 1, undecided: 2, mixed: 3};
+  const root = document.getElementById("hyps");
+  let first = null;
+  for (const [h, [name, def]] of Object.entries(HYP)) {
+    const wrap = document.createElement("div"); wrap.className = "hyp";
+    wrap.innerHTML = `<h3>${name}</h3><p class="def">${def}</p>`;
+    for (const [key, label] of DESIGN) {
+      const rs = rows.filter(r => r.h === h && (key === "other" ? !["experimental", "observational"].includes(r.design) : r.design === key))
+                     .sort((a, b) => order[a.expert] - order[b.expert] || order[a.llm] - order[b.llm]);
+      if (!rs.length) continue;
+      const g = document.createElement("div"); g.className = "group";
+      g.innerHTML = `<span class="lab">${label}, ${rs.length}</span>`;
+      const ticks = document.createElement("div"); ticks.className = "ticks";
+      for (const r of rs) {
+        const b = document.createElement("button");
+        b.className = "tick"; b.type = "button"; b.setAttribute("aria-pressed", "false");
+        b.setAttribute("aria-label", `${r.t}. Experts: ${r.expert}. Model: ${r.llm}.`);
+        b.innerHTML = `<i class="v-${r.expert}"></i><em class="v-${r.llm}"></em>`;
+        b.addEventListener("click", () => show(r, b));
+        ticks.appendChild(b);
+        if (!first && r.expert === r.llm && r.expert === "questioned" && r.q) first = [r, b];
+      }
+      g.appendChild(ticks); wrap.appendChild(g);
+    }
+    root.appendChild(wrap);
+  }
+  if (first) show(...first);
+}).catch(() => {
+  record.textContent = "The study list could not be loaded. Open studies.json in the repository to see the records.";
+});
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 
 Amrina · M.Sc. Educational Technology (Saarland University), B.Sc. Informatics
 
-🌐 **Project page:** https://sayamrina.github.io/hypothesis-ledger/ · 👤 **Portfolio:** https://sayamrina.github.io
+🚀 **Live app:** https://hypothesis-ledger.streamlit.app/ · 🌐 **Project page:** https://sayamrina.github.io/hypothesis-ledger/ · 👤 **Portfolio:** https://sayamrina.github.io
 
 Invasion biology has a set of classic hypotheses that have each been tested in hundreds of studies. The *Hi Knowledge* initiative (Jeschke & Heger, 2018) read these studies and recorded, for each one, whether its findings **support**, **question** or leave **undecided** a hypothesis, together with habitat, organism and research method. These expert labels are published in the [Open Research Knowledge Graph](https://orkg.org) (ORKG).
 
@@ -87,6 +87,10 @@ Enemy release is mostly supported by observational comparisons (for example of d
 - One model, one run, temperature 0; no prompt tuning on a separate development set, so the reported accuracy is not an optimised result.
 - The categories for causal nodes were chosen by me before the run; another set could change the graph.
 - Total model use: about 291,000 tokens for both conditions (well under 1 USD with GPT-4o-mini), plus the judge.
+
+## Live app
+
+The Streamlit app (`app/streamlit_app.py`) extracts claims from an abstract you paste (GPT-4o-mini, five runs per session), shows stored results for the 144 studies with their RDF record and SHACL check, and runs SPARQL queries on the graph. Run it locally with `streamlit run app/streamlit_app.py`; set `OPENAI_API_KEY` to enable live extraction.
 
 ## Reproduce
 

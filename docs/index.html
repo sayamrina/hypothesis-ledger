@@ -4,328 +4,607 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hypothesis Ledger</title>
-<meta name="description" content="A pilot that lets a language model read invasion biology abstracts, extract causal claims with verbatim evidence, and judge hypotheses, compared with expert labels from Hi Knowledge.">
+<meta name="description" content="A pilot that lets a language model read invasion biology abstracts, extract causal claims with verbatim evidence, store them as a provenance knowledge graph, and compare its verdicts with expert labels.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
 <style>
 :root {
-  --paper: #e8ede6;
-  --sheet: #f4f6f1;
-  --ink: #1d2a2c;
-  --muted: #56645f;
-  --rule: #c4cdc3;
-  --river: #1f6680;
-  --supported: #4b7a35;
-  --questioned: #6b4a91;
-  --undecided: #a39d93;
-  --mark: #dfe8c9;
+  --deep: #0f2e29;
+  --deep-2: #163a34;
+  --deep-line: #2b524a;
+  --on-deep: #e6efe9;
+  --on-deep-muted: #9fb8ae;
+  --paper: #eef2ec;
+  --sheet: #f8faf6;
+  --ink: #17262a;
+  --muted: #586862;
+  --rule: #cdd7cb;
+  --river: #1b6b84;
+  --supported: #5f9b40;
+  --questioned: #7d5aab;
+  --undecided: #a7a196;
+  --pollen: #e3ef7a;
+  --pollen-ink: #2c3410;
+  --sans: "Instrument Sans", system-ui, sans-serif;
+  --serif: "Newsreader", Georgia, serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #151c1d;
-    --sheet: #1c2526;
-    --ink: #e2e8e3;
-    --muted: #9aa8a2;
-    --rule: #33403f;
-    --river: #7cc0d6;
-    --supported: #86b96b;
-    --questioned: #b499db;
-    --undecided: #7d786f;
-    --mark: #34402a;
+    --deep: #0b211e;
+    --deep-2: #12302b;
+    --deep-line: #24463f;
+    --paper: #131b1c;
+    --sheet: #1a2425;
+    --ink: #e1e8e3;
+    --muted: #9aa9a3;
+    --rule: #2e3c3b;
+    --river: #7cc3da;
+    --supported: #82bd63;
+    --questioned: #ad8fdc;
+    --undecided: #7f7a70;
+    --pollen: #c9d860;
   }
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body {
-  margin: 0; background: var(--paper); color: var(--ink);
-  font: 400 1.0625rem/1.62 "Newsreader", Georgia, serif;
-  font-optical-sizing: auto;
-}
-a { color: var(--river); text-underline-offset: 2px; }
-a:focus-visible, button:focus-visible { outline: 2px solid var(--river); outline-offset: 2px; border-radius: 2px; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 64px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 1.0625rem/1.62 var(--serif); font-optical-sizing: auto; }
+a { color: var(--river); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 2px solid var(--pollen); outline-offset: 2px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 28px; }
 
-.topbar {
-  display: flex; justify-content: space-between; align-items: center; gap: 12px;
-  padding: 12px 20px; border-bottom: 1px solid var(--rule);
-  font: 500 0.92rem/1.3 "Instrument Sans", system-ui, sans-serif;
-}
-.topbar b { font-weight: 600; letter-spacing: 0.01em; }
-.topbar nav { display: flex; gap: 18px; flex-wrap: wrap; }
-.topbar nav a { color: var(--ink); text-decoration: none; }
-.topbar nav a:hover { color: var(--river); text-decoration: underline; }
-.banner {
-  font: 400 0.86rem/1.4 "Instrument Sans", system-ui, sans-serif; color: var(--muted);
-  padding: 7px 20px; border-bottom: 1px solid var(--rule); background: var(--sheet);
-}
+/* top bar + banner */
+.topbar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--deep) 92%, transparent); backdrop-filter: blur(8px); color: var(--on-deep); border-bottom: 1px solid var(--deep-line); }
+.topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 54px; }
+.brand { font: 600 1rem/1 var(--sans); color: var(--on-deep); text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.brand svg { flex: none; }
+.topbar nav { display: flex; gap: 22px; font: 500 0.92rem/1 var(--sans); }
+.topbar nav a { color: var(--on-deep-muted); text-decoration: none; }
+.topbar nav a:hover { color: var(--on-deep); }
+.banner { background: var(--deep-2); color: var(--on-deep-muted); font: 400 0.86rem/1.4 var(--sans); border-bottom: 1px solid var(--deep-line); }
+.banner .wrap { padding-top: 8px; padding-bottom: 8px; }
+.banner a { color: var(--on-deep); }
 
-main { max-width: 1060px; margin: 0 auto; padding: 0 20px 72px; }
-.col { max-width: 40rem; }
+/* hero */
+.hero { background: var(--deep); color: var(--on-deep); padding: 64px 0 56px; overflow: hidden; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 56px; align-items: start; }
+.hero h1 { font: 500 clamp(2.8rem, 6.4vw, 5.2rem)/0.98 var(--serif); letter-spacing: -0.025em; margin: 0 0 24px; }
+.hero .lede { font-size: clamp(1.2rem, 1.9vw, 1.42rem); line-height: 1.42; margin: 0 0 22px; max-width: 32rem; color: var(--on-deep); }
+.hero .by { font: 400 0.95rem/1.55 var(--sans); color: var(--on-deep-muted); margin: 0 0 30px; max-width: 32rem; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 8px; font: 600 0.95rem/1 var(--sans); padding: 13px 18px; border-radius: 6px; text-decoration: none; border: 1px solid transparent; }
+.btn.primary { background: var(--pollen); color: var(--pollen-ink); }
+.btn.primary:hover { filter: brightness(1.05); }
+.btn.ghost { color: var(--on-deep); border-color: var(--deep-line); }
+.btn.ghost:hover { border-color: var(--on-deep-muted); }
 
-header.hero { padding: 56px 0 8px; }
-h1 {
-  font-weight: 500; font-size: clamp(2.4rem, 6vw, 4rem); line-height: 1.02;
-  letter-spacing: -0.02em; margin: 0 0 18px;
-}
-.lede { font-size: 1.28rem; line-height: 1.45; margin: 0 0 10px; max-width: 36rem; }
-.byline { font: 400 0.95rem/1.5 "Instrument Sans", system-ui, sans-serif; color: var(--muted); margin: 0; }
-
-/* the ledger: one mark per study */
-.ledger {
-  margin: 40px 0 8px; padding: 22px 22px 18px; background: var(--sheet);
-  border: 1px solid var(--rule);
-}
-.ledger-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px; align-items: baseline; }
-.ledger-head h2 { font-size: 1.35rem; font-weight: 500; margin: 0; }
-.key { display: flex; gap: 16px; flex-wrap: wrap; font: 400 0.88rem/1.3 "Instrument Sans", system-ui, sans-serif; color: var(--muted); }
-.key span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
-.key .s::before { background: var(--supported); }
-.key .q::before { background: var(--questioned); }
-.key .u::before { background: var(--undecided); }
-.hyp { margin-top: 22px; }
-.hyp h3 { font: 600 0.95rem/1.3 "Instrument Sans", system-ui, sans-serif; margin: 0 0 2px; }
-.hyp p.def { margin: 0 0 10px; color: var(--muted); font-size: 0.98rem; font-style: italic; }
-.group { display: grid; grid-template-columns: 8.5rem 1fr; gap: 6px 14px; align-items: center; margin-bottom: 10px; }
-.group .lab { font: 400 0.84rem/1.25 "Instrument Sans", system-ui, sans-serif; color: var(--muted); }
+/* ledger (inside hero) */
+.ledger { background: var(--deep-2); border: 1px solid var(--deep-line); border-radius: 10px; padding: 22px 22px 18px; }
+.ledger-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.ledger-top h2 { font: 600 1rem/1.3 var(--sans); margin: 0; color: var(--on-deep); }
+.seg { display: inline-flex; border: 1px solid var(--deep-line); border-radius: 6px; overflow: hidden; }
+.seg button { font: 500 0.82rem/1 var(--sans); background: none; color: var(--on-deep-muted); border: 0; padding: 8px 11px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--deep-line); }
+.seg button[aria-pressed="true"] { background: var(--on-deep); color: var(--deep); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font: 400 0.8rem/1.3 var(--sans); color: var(--on-deep-muted); margin: 8px 0 4px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.legend .half { width: 9px; height: 14px; display: inline-grid; grid-template-rows: 1fr 1fr; gap: 1px; }
+.legend .half b, .legend .half em { background: var(--on-deep-muted); border-radius: 1px; }
+.legend .half em { opacity: 0.45; }
+.hyp { margin-top: 16px; }
+.hyp h3 { font: 600 0.9rem/1.3 var(--sans); color: var(--on-deep); margin: 0 0 8px; display: flex; justify-content: space-between; gap: 10px; }
+.hyp h3 small { font-weight: 400; color: var(--on-deep-muted); }
+.group { display: grid; grid-template-columns: 7.6rem 1fr; gap: 8px; align-items: start; margin-bottom: 8px; }
+.group .lab { font: 400 0.78rem/1.3 var(--sans); color: var(--on-deep-muted); padding-top: 6px; }
 .ticks { display: flex; flex-wrap: wrap; gap: 3px; }
-.tick {
-  width: 13px; height: 30px; padding: 0; border: 0; cursor: pointer; background: none;
-  display: grid; grid-template-rows: 1fr 1fr; gap: 2px;
-}
-.tick i, .tick em { display: block; }
-.tick i { border-radius: 1px 1px 0 0; }
-.tick em { border-radius: 0 0 1px 1px; opacity: 0.75; }
-.tick[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 1px; }
+.tick { width: 12px; height: 28px; padding: 0; border: 0; border-radius: 2px; background: none; cursor: pointer; display: grid; grid-template-rows: 1fr 1fr; gap: 2px; transition: opacity 0.2s, transform 0.15s; }
+.tick:hover { transform: translateY(-2px); }
+.tick b, .tick em { display: block; border-radius: 1.5px; }
+.tick em { opacity: 0.78; }
+.tick[aria-pressed="true"] { outline: 2px solid var(--pollen); outline-offset: 2px; }
+.tick.dim { opacity: 0.16; }
 .v-supported { background: var(--supported); }
 .v-questioned { background: var(--questioned); }
 .v-undecided { background: var(--undecided); }
 .v-mixed { background: repeating-linear-gradient(45deg, var(--undecided) 0 2px, transparent 2px 4px); }
-.howto { font: 400 0.86rem/1.4 "Instrument Sans", system-ui, sans-serif; color: var(--muted); margin: 6px 0 0; }
-
-.record {
-  margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 14px; min-height: 9rem;
-}
-.record h4 { font-size: 1.1rem; font-weight: 500; margin: 0 0 6px; line-height: 1.35; }
-.record .verdicts { font: 400 0.9rem/1.5 "Instrument Sans", system-ui, sans-serif; margin: 0 0 8px; }
-.record blockquote {
-  margin: 0 0 8px; padding: 2px 0 2px 14px; border-left: 3px solid var(--supported);
-}
-.record blockquote mark { background: var(--mark); color: inherit; padding: 0 2px; }
-.record .why { color: var(--muted); font-size: 0.97rem; margin: 0 0 6px; }
-.record .src { font: 400 0.86rem/1.4 "Instrument Sans", system-ui, sans-serif; margin: 0; }
-
-section { margin-top: 64px; }
-h2.sec { font-weight: 500; font-size: 1.85rem; line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 14px; }
-p { margin: 0 0 14px; }
-ol.steps { padding-left: 1.4rem; margin: 0; }
-ol.steps li { margin-bottom: 12px; padding-left: 4px; }
-ol.steps li::marker { font: 600 0.95rem "Instrument Sans", system-ui, sans-serif; color: var(--river); }
-
-table { border-collapse: collapse; width: 100%; font: 400 0.95rem/1.4 "Instrument Sans", system-ui, sans-serif; margin: 6px 0 16px; }
-th, td { text-align: left; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
-th { font-weight: 600; }
-td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-.tablewrap { overflow-x: auto; }
-
-pre {
-  font: 400 0.8rem/1.55 "JetBrains Mono", ui-monospace, monospace; background: var(--sheet);
-  border: 1px solid var(--rule); padding: 16px; overflow-x: auto; margin: 6px 0 14px;
-}
-pre .c { color: var(--muted); }
-pre .bad { background: var(--mark); }
-figure { margin: 10px 0 18px; }
-figure img { width: 100%; max-width: 760px; display: block; border: 1px solid var(--rule); background: #fff; }
-figcaption { font: 400 0.88rem/1.45 "Instrument Sans", system-ui, sans-serif; color: var(--muted); margin-top: 6px; max-width: 40rem; }
-.split { display: grid; grid-template-columns: minmax(0, 40rem) minmax(0, 1fr); gap: 40px; align-items: start; }
-.aside { font: 400 0.92rem/1.5 "Instrument Sans", system-ui, sans-serif; color: var(--muted); border-left: 1px solid var(--rule); padding-left: 18px; }
-footer { margin-top: 72px; padding-top: 18px; border-top: 1px solid var(--rule); font: 400 0.88rem/1.5 "Instrument Sans", system-ui, sans-serif; color: var(--muted); }
-footer p { max-width: 46rem; }
-
-@media (max-width: 760px) {
-  header.hero { padding-top: 36px; }
-  .group { grid-template-columns: 1fr; gap: 4px; }
-  .split { grid-template-columns: 1fr; gap: 12px; }
-  .aside { border-left: 0; padding-left: 0; }
-  .topbar { flex-wrap: wrap; padding: 10px 16px; }
-  .topbar nav { gap: 14px; font-size: 0.86rem; }
-  .banner { padding: 7px 16px; }
-  .ledger { padding: 16px 14px; margin-left: -6px; margin-right: -6px; }
-  .tick { width: 12px; }
-}
 @media (prefers-reduced-motion: no-preference) {
-  .record.fresh { animation: show 0.25s ease-out; }
-  @keyframes show { from { opacity: 0.4; } to { opacity: 1; } }
+  .tick.in { animation: grow 0.5s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--i) * 6ms); }
+  @keyframes grow { from { opacity: 0; transform: scaleY(0.2); } to { opacity: 1; transform: none; } }
+}
+.record { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--deep-line); min-height: 12.5rem; }
+.record .meta { font: 500 0.8rem/1.4 var(--sans); color: var(--on-deep-muted); margin: 0 0 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 4px; background: var(--deep); border: 1px solid var(--deep-line); color: var(--on-deep); }
+.badge i { width: 8px; height: 8px; border-radius: 2px; }
+.badge.agree { border-color: var(--supported); }
+.badge.differ { border-color: var(--pollen); }
+.record h4 { font: 500 1.08rem/1.35 var(--serif); margin: 0 0 8px; color: var(--on-deep); }
+.record blockquote { margin: 0 0 8px; font-size: 0.98rem; line-height: 1.5; }
+.record blockquote mark { background: var(--pollen); color: var(--pollen-ink); padding: 1px 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.record .why { color: var(--on-deep-muted); font-size: 0.93rem; margin: 0 0 8px; }
+.record .src { font: 400 0.82rem/1.4 var(--sans); margin: 0; }
+.record .src a { color: var(--on-deep); }
+.fresh { animation: none; }
+@media (prefers-reduced-motion: no-preference) { .fresh { animation: fade 0.3s ease-out; } @keyframes fade { from { opacity: 0.3; } to { opacity: 1; } } }
+
+/* sections */
+section { padding: 88px 0 0; }
+.kicker { font: 600 0.9rem/1.3 var(--sans); color: var(--river); margin: 0 0 10px; }
+h2.sec { font: 500 clamp(1.9rem, 3.4vw, 2.6rem)/1.08 var(--serif); letter-spacing: -0.015em; margin: 0 0 16px; max-width: 22ch; }
+.intro { max-width: 40rem; margin: 0 0 30px; font-size: 1.08rem; }
+p { margin: 0 0 14px; }
+
+/* one sentence, three forms */
+.forms { display: grid; grid-template-columns: 1fr 1.1fr 1.25fr; gap: 0; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--sheet); }
+.form { padding: 22px 22px 20px; position: relative; min-width: 0; }
+.form + .form { border-left: 1px solid var(--rule); }
+.form h3 { font: 600 0.92rem/1.3 var(--sans); margin: 0 0 4px; }
+.form .note { font: 400 0.82rem/1.4 var(--sans); color: var(--muted); margin: 0 0 14px; }
+.form blockquote { margin: 0; font-size: 1.12rem; line-height: 1.55; }
+.form blockquote mark { background: var(--pollen); color: var(--pollen-ink); padding: 1px 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.form .cite { font: 400 0.8rem/1.4 var(--sans); color: var(--muted); margin-top: 12px; }
+.form pre { margin: 0; font: 400 0.76rem/1.6 var(--mono); white-space: pre-wrap; word-break: break-word; color: var(--ink); }
+.k { color: var(--river); }
+.s { color: var(--supported); }
+.c { color: var(--muted); }
+.flag { background: color-mix(in srgb, var(--pollen) 55%, transparent); border-radius: 2px; }
+.form + .form::before { content: ""; position: absolute; left: -9px; top: 26px; width: 16px; height: 16px; background: var(--sheet); border-top: 1px solid var(--rule); border-right: 1px solid var(--rule); transform: rotate(45deg); }
+
+.steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; margin-top: 34px; counter-reset: s; }
+.steps li { list-style: none; font: 400 0.9rem/1.5 var(--sans); color: var(--muted); border-top: 2px solid var(--rule); padding-top: 12px; }
+.steps li b { display: block; color: var(--ink); font-weight: 600; margin-bottom: 4px; }
+.steps li b::before { counter-increment: s; content: counter(s) "  "; color: var(--river); }
+.steps { padding: 0; margin-bottom: 0; }
+
+/* figures row */
+.figures { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin: 0 0 48px; }
+.fig { padding: 22px 20px 20px 0; }
+.fig + .fig { border-left: 1px solid var(--rule); padding-left: 20px; }
+.fig .num { font: 500 clamp(2.2rem, 4vw, 3.1rem)/1 var(--serif); letter-spacing: -0.02em; display: block; margin-bottom: 8px; }
+.fig p { font: 400 0.9rem/1.45 var(--sans); color: var(--muted); margin: 0; }
+
+.charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+.chart { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 22px; min-width: 0; }
+.chart h3 { font: 600 1rem/1.35 var(--sans); margin: 0 0 4px; }
+.chart .note { font: 400 0.86rem/1.45 var(--sans); color: var(--muted); margin: 0 0 16px; }
+.chart.wide { grid-column: 1 / -1; }
+.bars { display: grid; gap: 12px; font: 400 0.88rem/1.3 var(--sans); }
+.bar { display: grid; grid-template-columns: 11rem 1fr 3.4rem; gap: 12px; align-items: center; }
+.bar .track { height: 12px; background: color-mix(in srgb, var(--rule) 55%, transparent); border-radius: 3px; overflow: hidden; }
+.bar .fill { height: 100%; background: var(--river); border-radius: 3px; width: 0; transition: width 0.9s cubic-bezier(.2,.7,.2,1); }
+.bar .fill.muted { background: var(--undecided); }
+.bar .fill.warn { background: var(--questioned); }
+.bar .val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart svg text { font-family: var(--sans); fill: var(--muted); }
+.chart svg .lbl { fill: var(--ink); font-weight: 600; }
+.ckey { display: flex; gap: 18px; flex-wrap: wrap; font: 400 0.82rem/1.3 var(--sans); color: var(--muted); margin-top: 10px; }
+.ckey span { display: inline-flex; align-items: center; gap: 6px; }
+.ckey svg { width: 12px; height: 12px; flex: none; }
+
+/* causal graph */
+.graph-wrap { position: relative; }
+.graph-wrap svg path.edge { fill: none; stroke: var(--river); stroke-opacity: 0.38; transition: stroke-opacity 0.2s; cursor: pointer; }
+.graph-wrap svg path.edge.on { stroke-opacity: 0.95; }
+.graph-wrap svg path.edge.off { stroke-opacity: 0.08; }
+.graph-wrap svg .node rect { fill: var(--paper); stroke: var(--rule); }
+.graph-wrap svg .node.on rect { stroke: var(--river); stroke-width: 2; }
+.graph-wrap svg .node text { fill: var(--ink); font-size: 13px; }
+.graph-wrap svg .node { cursor: pointer; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); font: 400 0.82rem/1.45 var(--sans); padding: 9px 11px; border-radius: 6px; max-width: 260px; opacity: 0; transition: opacity 0.15s; z-index: 5; }
+.tip.show { opacity: 1; }
+.dirbar { display: flex; height: 26px; border-radius: 4px; overflow: hidden; margin: 6px 0 8px; font: 600 0.78rem/26px var(--sans); color: #fff; }
+.dirbar span { padding: 0 8px; white-space: nowrap; overflow: hidden; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 36px; align-items: start; }
+pre.code { font: 400 0.8rem/1.6 var(--mono); background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; overflow-x: auto; margin: 0; }
+
+.limits { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.limits div { border-top: 2px solid var(--rule); padding-top: 12px; font: 400 0.95rem/1.55 var(--sans); color: var(--muted); }
+.limits b { display: block; color: var(--ink); font-weight: 600; margin-bottom: 4px; }
+
+footer { margin-top: 96px; background: var(--deep); color: var(--on-deep-muted); font: 400 0.88rem/1.55 var(--sans); padding: 36px 0 44px; }
+footer p { max-width: 50rem; }
+footer a { color: var(--on-deep); }
+
+@media (max-width: 980px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 36px; }
+  .forms { grid-template-columns: 1fr; }
+  .form + .form { border-left: 0; border-top: 1px solid var(--rule); }
+  .form + .form::before { left: 26px; top: -9px; transform: rotate(135deg); }
+  .steps { grid-template-columns: 1fr 1fr; }
+  .figures { grid-template-columns: 1fr 1fr; }
+  .fig:nth-child(3) { border-left: 0; padding-left: 0; }
+  .fig:nth-child(n+3) { border-top: 1px solid var(--rule); }
+  .charts, .split { grid-template-columns: 1fr; }
+  .limits { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  #dumbbell, .graph-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #dumbbell svg { min-width: 600px; }
+  .graph-wrap svg { min-width: 760px; }
+  .scrollhint { display: block; }
+}
+.scrollhint { display: none; font: 400 0.8rem/1.4 var(--sans); color: var(--muted); margin: 8px 0 0; }
+@media (max-width: 560px) {
+  .wrap { padding: 0 16px; }
+  .topbar nav { gap: 14px; font-size: 0.84rem; }
+  .topbar nav .hide-s { display: none; }
+  .hero { padding: 40px 0 40px; }
+  .ledger { padding: 16px 12px 14px; margin: 0 -4px; }
+  .group { grid-template-columns: 1fr; gap: 4px; }
+  .group .lab { padding-top: 0; }
+  .tick { width: 11px; }
+  .steps { grid-template-columns: 1fr; }
+  .bar { grid-template-columns: 7.6rem 1fr 3rem; }
+  section { padding-top: 64px; }
 }
 </style>
 </head>
 <body>
 <div class="topbar">
-  <b>Hypothesis Ledger</b>
-  <nav aria-label="Project links">
-    <a href="https://github.com/sayamrina/hypothesis-ledger">Code and data</a>
-    <a href="#results">Results</a>
-    <a href="#limits">Limitations</a>
-  </nav>
+  <div class="wrap">
+    <a class="brand" href="#top">
+      <svg width="18" height="22" viewBox="0 0 18 22" aria-hidden="true"><rect x="0" y="0" width="4" height="10" rx="1" fill="#5f9b40"/><rect x="0" y="12" width="4" height="10" rx="1" fill="#5f9b40" opacity=".75"/><rect x="7" y="0" width="4" height="10" rx="1" fill="#7d5aab"/><rect x="7" y="12" width="4" height="10" rx="1" fill="#5f9b40" opacity=".75"/><rect x="14" y="0" width="4" height="10" rx="1" fill="#a7a196"/><rect x="14" y="12" width="4" height="10" rx="1" fill="#a7a196" opacity=".75"/></svg>
+      Hypothesis Ledger
+    </a>
+    <nav aria-label="Sections">
+      <a href="#method">Method</a>
+      <a href="#results">Results</a>
+      <a href="#graph" class="hide-s">Causal graph</a>
+      <a href="https://github.com/sayamrina/hypothesis-ledger">GitHub</a>
+    </nav>
+  </div>
 </div>
-<div class="banner">This website was developed by Amrina as part of a portfolio. <a href="https://sayamrina.github.io/" target="_blank" rel="noopener">View the portfolio</a></div>
+<div class="banner"><div class="wrap">This website was developed by Amrina as part of a portfolio. <a href="https://sayamrina.github.io/" target="_blank" rel="noopener">View the portfolio</a></div></div>
 
-<main>
-<header class="hero">
-  <h1>Hypothesis Ledger</h1>
-  <p class="lede">Can a language model read ecology abstracts, pull out their causal claims with the exact sentence that supports each one, and tell whether a hypothesis holds, the way experts did?</p>
-  <p class="byline">A pilot by Amrina on 144 invasion biology studies, checked against the expert labels of the Hi Knowledge initiative in the Open Research Knowledge Graph.</p>
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>Hypothesis Ledger</h1>
+      <p class="lede">Can a language model read ecology abstracts, pull out each causal claim together with the exact sentence behind it, and decide whether a hypothesis holds, the way experts did?</p>
+      <p class="by">A research pilot by Amrina on 144 invasion biology studies. Expert labels come from the Hi Knowledge initiative in the Open Research Knowledge Graph; the model's output is stored as an RDF knowledge graph with provenance.</p>
+      <div class="cta">
+        <a class="btn primary" href="#results">See the results</a>
+        <a class="btn ghost" href="https://github.com/sayamrina/hypothesis-ledger">Code and data</a>
+      </div>
+    </div>
+
+    <div class="ledger" id="ledger">
+      <div class="ledger-top">
+        <h2>144 studies, one mark each</h2>
+        <div class="seg" role="group" aria-label="Filter studies">
+          <button type="button" data-f="all" aria-pressed="true">All</button>
+          <button type="button" data-f="differ" aria-pressed="false">Disagreements</button>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="v-supported"></i>supported</span>
+        <span><i class="v-questioned"></i>questioned</span>
+        <span><i class="v-undecided"></i>undecided</span>
+        <span><span class="half" aria-hidden="true"><b></b><em></em></span>top: experts, bottom: model</span>
+      </div>
+      <div id="hyps"></div>
+      <div class="record" id="record" aria-live="polite"></div>
+    </div>
+  </div>
 </header>
 
-<div class="ledger" id="ledger">
-  <div class="ledger-head">
-    <h2>One mark per study</h2>
-    <div class="key" aria-hidden="true"><span class="s">supported</span><span class="q">questioned</span><span class="u">undecided</span></div>
-  </div>
-  <p class="howto">Top half: what the experts recorded. Bottom half: what the model concluded from the abstract. Rows group studies by the design the model read from the abstract. Hatched marks are papers whose expert labels differ between species. Select a mark to read the record.</p>
-  <div id="hyps"></div>
-  <div class="record" id="record" aria-live="polite"></div>
-</div>
+<main>
+<section id="method">
+  <div class="wrap">
+    <p class="kicker">Method</p>
+    <h2 class="sec">One sentence, three forms</h2>
+    <p class="intro">Every claim travels the same way: from a sentence in an abstract, to a structured record the model fills in, to triples in a knowledge graph that remember where they came from. This is one real record from the run.</p>
+    <div class="forms">
+      <div class="form">
+        <h3>In the abstract</h3>
+        <p class="note">Plant functional group identity and diversity determine biotic resistance to invasion by an exotic grass</p>
+        <blockquote><mark>Functional group identity and diversity of resident plant communities are good indicators of biotic resistance to invasion by introduced Phragmites australis.</mark></blockquote>
+        <p class="cite"><a href="https://doi.org/10.1111/1365-2745.12016">doi.org/10.1111/1365-2745.12016</a></p>
+      </div>
+      <div class="form">
+        <h3>Extracted by the model</h3>
+        <p class="note">Structured output, checked against the abstract</p>
+<pre>{
+  <span class="k">"cause"</span>: <span class="s">"functional group identity"</span>,
+  <span class="k">"effect"</span>: <span class="s">"biotic resistance to P. australis"</span>,
+  <span class="k">"cause_node"</span>: <span class="s">"native_diversity"</span>,
+  <span class="k">"effect_node"</span>: <span class="s">"invader_establishment"</span>,
+  <span class="k">"direction"</span>: <span class="s">"increases"</span>,
+  <span class="k">"habitat"</span>: <span class="s">"terrestrial"</span>,
+  <span class="k">"evidence_quote"</span>: <span class="s">"Functional group identity…"</span>
+}
+<span class="k">verdict</span>: <span class="s">supported</span>   <span class="c">// experts: supported</span></pre>
+      </div>
+      <div class="form">
+        <h3>Stored in the graph</h3>
+        <p class="note">RDF with PROV-O, validated with SHACL</p>
+<pre><span class="k">hl:claim_R52077_biotic_resistance_0</span>
+    a hl:CausalClaim ;
+    <span class="k">prov:value</span> <span class="s">"Functional group identity…"</span> ;
+    <span class="k">prov:wasDerivedFrom</span>
+        &lt;https://doi.org/10.1111/1365-2745.12016&gt; ;
+    <span class="k">prov:wasGeneratedBy</span> hl:run_claims ;
+    hl:causeNode  hl:native_diversity ;
+    hl:effectNode hl:invader_establishment ;
+    <span class="flag">hl:direction  hl:increases ;</span>
+    hl:quoteVerified true .
 
-<section id="how">
-  <div class="split">
-    <div>
-      <h2 class="sec">How a study becomes a record</h2>
-      <ol class="steps">
-        <li><b>Expert labels.</b> The Hi Knowledge comparisons in the Open Research Knowledge Graph list 318 papers on the enemy release and biotic resistance hypotheses, each marked as supporting, questioning or undecided, with habitat and research method.</li>
-        <li><b>Abstracts.</b> Missing DOIs are resolved by title on Crossref; abstracts come from OpenAlex, Crossref or Semantic Scholar. 144 paper and hypothesis pairs have one.</li>
-        <li><b>Extraction.</b> GPT-4o-mini returns structured output: every causal claim with cause, effect, direction, organism, habitat and a verbatim quote, then the study design and a verdict. Quotes that are not in the abstract go back to the model once for correction.</li>
-        <li><b>Knowledge graph.</b> Each claim becomes RDF linked to the ORKG study and hypothesis, with PROV-O for the quote, the source DOI and the extraction run. SHACL shapes check that no claim is stored without a quote and a source.</li>
-        <li><b>Comparison.</b> Verdicts are scored against the experts, a second model call acts as judge, and SPARQL queries answer questions such as "where does the model disagree, and which sentence did it rely on?"</li>
-      </ol>
+<span class="k">hl:assessment_R52077_…</span>
+    hl:study      orkg:R52077 ;
+    hl:hypothesis orkg:R57501 ;
+    hl:verdict    hl:supported .</pre>
+      </div>
     </div>
-    <p class="aside">The verdict was also produced in a second condition, directly and without the claims step, to see whether writing out the claims first changes the answer.</p>
+    <ol class="steps">
+      <li><b>Expert labels</b>Two Hi Knowledge comparisons in the ORKG: 418 contributions from 318 papers.</li>
+      <li><b>Abstracts</b>DOIs resolved on Crossref; abstracts from OpenAlex, Crossref and Semantic Scholar; 144 found.</li>
+      <li><b>Extraction</b>GPT-4o-mini with structured output; quotes not found in the abstract go back once.</li>
+      <li><b>Graph</b>RDF linked to ORKG resources, PROV-O for provenance, SHACL shapes, SPARQL queries.</li>
+      <li><b>Comparison</b>Scored against the experts, a second condition without claims, and an LLM judge.</li>
+    </ol>
   </div>
 </section>
 
 <section id="results">
-  <h2 class="sec">What came out</h2>
-  <div class="col">
-    <p>On the 131 studies with a single expert label, the model agreed with the experts in three of four cases. Writing out the claims first did not raise accuracy, but it recognised more mixed results as undecided.</p>
-  </div>
-  <div class="tablewrap col">
-    <table>
-      <thead><tr><th>Condition</th><th class="num">Accuracy</th><th class="num">Macro-F1</th><th class="num">Undecided found (of 20)</th></tr></thead>
-      <tbody>
-        <tr><td>Always the most frequent label</td><td class="num">0.43</td><td class="num">–</td><td class="num">–</td></tr>
-        <tr><td>Verdict directly</td><td class="num">0.76</td><td class="num">0.60</td><td class="num">2</td></tr>
-        <tr><td>Claims first, then verdict</td><td class="num">0.75</td><td class="num">0.66</td><td class="num">7</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="col">
-    <p>Of 450 extracted claims, 99.3% carry a quote that appears word for word in the abstract after one correction round; the rest are flagged in the graph rather than dropped. The study design the model read from the abstract matched the experts' method label in 91% of studies.</p>
-    <p>The most interesting result sits one level up, in the synthesis. Whether a hypothesis looks supported depends on how it was tested, and in opposite directions for the two hypotheses:</p>
-  </div>
-  <div class="tablewrap col">
-    <table>
-      <thead><tr><th>Expert labels</th><th class="num">Experimental studies supporting</th><th class="num">Observational studies supporting</th><th class="num">Fisher p</th></tr></thead>
-      <tbody>
-        <tr><td>Enemy release</td><td class="num">4 of 13</td><td class="num">25 of 34</td><td class="num">.017</td></tr>
-        <tr><td>Biotic resistance</td><td class="num">16 of 28</td><td class="num">6 of 27</td><td class="num">.013</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="col">
-    <p>The model's verdicts show the same two directions, but weaker (p = .12 and .10), and it rates biotic resistance as supported more often than the experts did (55% against 42%). A synthesis that pools experiments and field comparisons answers a different causal question than it seems to, and that is exactly the kind of condition an assistant for hypothesis assessment has to keep visible.</p>
-    <p>A second model call asked to judge the verdicts called 85.5% of them correct; 74.8% were. Its agreement with the expert check was only slightly better than chance (Cohen's κ = 0.20), so it cannot replace that check.</p>
+  <div class="wrap">
+    <p class="kicker">Results</p>
+    <h2 class="sec">Good at single studies, weaker on the bigger picture</h2>
+    <div class="figures" id="figures"></div>
+
+    <div class="charts">
+      <div class="chart">
+        <h3>Agreement with the experts</h3>
+        <p class="note">131 studies with a single expert label. Writing out the claims first did not raise accuracy, but it found 7 of 20 undecided studies instead of 2.</p>
+        <div class="bars" id="accbars"></div>
+      </div>
+      <div class="chart">
+        <h3>Can a model check the model?</h3>
+        <p class="note">A second call judged each verdict without seeing the expert label. It was far more generous than the truth: Cohen's κ with the expert check was 0.20.</p>
+        <div class="bars" id="judgebars"></div>
+      </div>
+      <div class="chart wide">
+        <h3>How a study was done changes what it shows</h3>
+        <p class="note">Share of studies that support each hypothesis, split by design. In the expert labels the gap runs in opposite directions for the two hypotheses (Fisher exact p = .017 and .013). The model sees the same directions, but the gaps shrink.</p>
+        <div id="dumbbell"></div>
+        <p class="scrollhint">Swipe sideways to see the whole chart.</p>
+        <div class="ckey">
+          <span><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="var(--river)"/></svg>experimental studies</span>
+          <span><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" fill="var(--sheet)" stroke="var(--river)" stroke-width="2"/></svg>observational studies</span>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
-<section id="sign">
-  <h2 class="sec">Where it breaks: the direction of an effect</h2>
-  <div class="col">
-    <p>The weak point is the sign of a causal claim. In the record below, more plant diversity means more resistance to the invader, so its effect on invader establishment should be "decreases". The model wrote "increases", because the sentence talks about resistance. Across all studies it coded enemy pressure as increasing invader performance 30 times and decreasing it 21 times.</p>
+<section id="graph">
+  <div class="wrap">
+    <p class="kicker">Causal graph</p>
+    <h2 class="sec">What the studies link, and where the model trips</h2>
+    <p class="intro">Each line joins a factor to an outcome that at least three studies connect; thicker lines mean more studies. Hover or tap a line or a box to see how the model coded the direction.</p>
+    <div class="chart">
+      <div class="graph-wrap" id="graphwrap"><div class="tip" id="tip"></div></div>
+      <p class="scrollhint">Swipe sideways to see the whole graph.</p>
+    </div>
+    <div class="split" style="margin-top:36px">
+      <div>
+        <h3 style="font:600 1.05rem/1.35 var(--sans);margin:0 0 8px">The sign is the weak point</h3>
+        <p>More enemies should mean a weaker invader. Yet for that link the model wrote "increases" more often than "decreases", because the sentences talk about enemy <i>release</i> while the field asks about enemy <i>pressure</i>. The record in the method section shows the same slip: more diversity means more resistance, which is <i>fewer</i> invaders established.</p>
+        <p style="font:600 0.86rem/1.3 var(--sans);margin:18px 0 0">Enemy pressure → invader performance, 63 studies</p>
+        <div class="dirbar" id="dirbar"></div>
+        <p style="font:400 0.9rem/1.5 var(--sans);color:var(--muted)">A fix to test next: extract the variable first and its change second, with a fixed polarity for each variable, and check the sign against the verdict.</p>
+      </div>
+<pre class="code"><span class="c"># queries/disagreements.rq</span>
+SELECT ?title ?llm ?expert (SAMPLE(?quote) AS ?evidence)
+WHERE {
+  ?a a hl:Assessment ; hl:study ?s ;
+     hl:verdict ?llm ; hl:expertVerdict ?expert .
+  FILTER (?llm != ?expert)
+  ?s dcterms:title ?title .
+  OPTIONAL { ?a hl:basedOn ?c . ?c prov:value ?quote }
+}
+GROUP BY ?title ?llm ?expert</pre>
+    </div>
   </div>
-<pre><span class="c"># from results/ledger.ttl</span>
-hl:claim_R52077_biotic_resistance_0 a hl:CausalClaim ;
-    prov:value "Functional group identity and diversity of resident plant communities
-                are good indicators of biotic resistance to invasion by introduced
-                Phragmites australis." ;
-    prov:wasDerivedFrom &lt;https://doi.org/10.1111/1365-2745.12016&gt; ;
-    hl:causeNode  hl:native_diversity ;
-    hl:effectNode hl:invader_establishment ;
-<span class="bad">    hl:direction  hl:increases ;</span>         <span class="c"># should be hl:decreases</span>
-    hl:quoteVerified true .</pre>
-  <figure>
-    <img src="causal_graph.png" alt="Network of causal claim categories. The thickest links run from native diversity to invader abundance and establishment, and from enemy pressure to invader performance and abundance." width="1350" height="900" loading="lazy">
-    <figcaption>Which factors the studies link to which outcomes, weighted by the number of studies. The direction is left out on purpose, because it is not yet reliable. The next step would be to extract the variable first and its change second, with a defined polarity for each variable.</figcaption>
-  </figure>
 </section>
 
 <section id="limits">
-  <h2 class="sec">Limitations</h2>
-  <div class="col">
-    <p>The experts read full texts; the model read abstracts, so some disagreements are probably caused by information that is not in the abstract. Only 144 of 318 papers had a retrievable abstract, and terrestrial studies dominate, so habitats could not be compared. One model, one run at temperature 0, no prompt tuning on a separate set. The categories for the causal graph were chosen before the run.</p>
+  <div class="wrap">
+    <p class="kicker">Limitations</p>
+    <h2 class="sec">What this pilot cannot say</h2>
+    <div class="limits">
+      <div><b>Abstracts, not full texts</b>The experts read the full papers. Some disagreements are probably caused by information that is not in the abstract.</div>
+      <div><b>A thin, terrestrial sample</b>144 of 318 papers had a retrievable abstract, and most are terrestrial, so habitats could not be compared.</div>
+      <div><b>One model, one run</b>GPT-4o-mini at temperature 0, no prompt tuning on a separate set; the categories for the causal graph were chosen before the run.</div>
+    </div>
   </div>
 </section>
-
-<footer>
-  <p>Expert labels: Hi Knowledge data in the Open Research Knowledge Graph (TIB), CC BY-SA; Jeschke, J. M. &amp; Heger, T. (Eds.) (2018), <i>Invasion Biology: Hypotheses and Evidence</i>, CABI. Quotes are short spans from the abstracts of the cited studies, each linked to its DOI. Code under MIT on <a href="https://github.com/sayamrina/hypothesis-ledger">GitHub</a>.</p>
-  <p>This website was built by Amrina, with AI as a supporting tool for coding.</p>
-</footer>
 </main>
 
+<footer>
+  <div class="wrap">
+    <p>Expert labels: Hi Knowledge data in the Open Research Knowledge Graph (TIB), CC BY-SA; Jeschke, J. M. &amp; Heger, T. (Eds.) (2018), <i>Invasion Biology: Hypotheses and Evidence</i>, CABI. Quotes are short spans from the abstracts of the cited studies, each linked to its DOI. Code under MIT on <a href="https://github.com/sayamrina/hypothesis-ledger">GitHub</a>.</p>
+    <p>This website was built by Amrina, with AI as a supporting tool for coding.</p>
+  </div>
+</footer>
+
 <script>
-const HYP = {
-  enemy_release: ["Enemy release", "The absence of enemies in the exotic range is a cause of invasion success."],
-  biotic_resistance: ["Biotic resistance", "An ecosystem with high biodiversity is more resistant against non-native species than one with lower biodiversity."],
+const HYP = { enemy_release: "Enemy release", biotic_resistance: "Biotic resistance" };
+const DESIGN = [["experimental", "Experimental"], ["observational", "Observational"], ["other", "Other"]];
+const NODE = {
+  enemy_pressure: "Enemy pressure", native_diversity: "Native diversity", native_competitors: "Native competitors",
+  resources_or_environment: "Resources, environment", invader_establishment: "Invader establishment",
+  invader_performance: "Invader performance", invader_abundance_or_spread: "Invader abundance, spread",
+  native_community: "Native community",
 };
-const DESIGN = [["experimental", "Experimental"], ["observational", "Observational"], ["other", "Other or unclear"]];
+const COLOR = { supported: "var(--supported)", questioned: "var(--questioned)", undecided: "var(--undecided)", mixed: "var(--undecided)" };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const pct = x => Math.round(x * 100) + "%";
 const record = document.getElementById("record");
-let selected = null;
+let selected = null, ticks = [];
 
-function esc(s) { return String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c])); }
-
-function show(row, btn) {
+function show(r, btn) {
   if (selected) selected.setAttribute("aria-pressed", "false");
   selected = btn; btn.setAttribute("aria-pressed", "true");
-  const agree = row.expert === "mixed" ? "experts disagree between species" : (row.expert === row.llm ? "agrees with the experts" : "differs from the experts");
-  const link = row.doi ? `<a href="https://doi.org/${esc(row.doi)}" target="_blank" rel="noopener">doi.org/${esc(row.doi)}</a>` : "no DOI";
+  const same = r.expert === r.llm, mixed = r.expert === "mixed";
+  const tag = mixed ? `<span class="badge">experts split by species</span>` :
+    `<span class="badge ${same ? "agree" : "differ"}">${same ? "agrees with the experts" : "differs from the experts"}</span>`;
+  const doi = r.doi ? `<a href="https://doi.org/${esc(r.doi)}" target="_blank" rel="noopener">DOI</a> · ` : "";
   record.innerHTML = `
-    <h4>${esc(row.t)}</h4>
-    <p class="verdicts">Experts: <b>${esc(row.expert)}</b>. Model: <b>${esc(row.llm)}</b>, ${agree}. ${row.n} causal claims, read as ${esc(row.design.replace(/_/g, " "))}.</p>
-    ${row.q ? `<blockquote><mark>${esc(row.q)}</mark></blockquote>` : ""}
-    <p class="why">${esc(row.why)}</p>
-    <p class="src">${link}, <a href="https://orkg.org/paper/${esc(row.orkg)}" target="_blank" rel="noopener">expert record in ORKG</a></p>`;
+    <p class="meta">${HYP[r.h]} ${tag}
+      <span class="badge"><i style="background:${COLOR[r.expert]}"></i>experts: ${esc(r.expert)}</span>
+      <span class="badge"><i style="background:${COLOR[r.llm]}"></i>model: ${esc(r.llm)}</span></p>
+    <h4>${esc(r.t)}</h4>
+    ${r.q ? `<blockquote><mark>${esc(r.q)}</mark></blockquote>` : ""}
+    <p class="why">${esc(r.why)}</p>
+    <p class="src">${doi}<a href="https://orkg.org/paper/${esc(r.orkg)}" target="_blank" rel="noopener">expert record in ORKG</a></p>`;
   record.classList.remove("fresh"); void record.offsetWidth; record.classList.add("fresh");
 }
 
-fetch("studies.json").then(r => r.json()).then(rows => {
+function buildLedger(rows) {
   const order = {supported: 0, questioned: 1, undecided: 2, mixed: 3};
   const root = document.getElementById("hyps");
-  let first = null;
-  for (const [h, [name, def]] of Object.entries(HYP)) {
+  let first = null, i = 0;
+  for (const [h, name] of Object.entries(HYP)) {
+    const hs = rows.filter(r => r.h === h);
+    const agree = hs.filter(r => r.expert === r.llm).length;
     const wrap = document.createElement("div"); wrap.className = "hyp";
-    wrap.innerHTML = `<h3>${name}</h3><p class="def">${def}</p>`;
+    wrap.innerHTML = `<h3>${name}<small>${agree} of ${hs.length} agree</small></h3>`;
     for (const [key, label] of DESIGN) {
-      const rs = rows.filter(r => r.h === h && (key === "other" ? !["experimental", "observational"].includes(r.design) : r.design === key))
-                     .sort((a, b) => order[a.expert] - order[b.expert] || order[a.llm] - order[b.llm]);
+      const rs = hs.filter(r => key === "other" ? !["experimental", "observational"].includes(r.design) : r.design === key)
+                   .sort((a, b) => order[a.expert] - order[b.expert] || order[a.llm] - order[b.llm]);
       if (!rs.length) continue;
       const g = document.createElement("div"); g.className = "group";
-      g.innerHTML = `<span class="lab">${label}, ${rs.length}</span>`;
-      const ticks = document.createElement("div"); ticks.className = "ticks";
+      g.innerHTML = `<span class="lab">${label} (${rs.length})</span>`;
+      const box = document.createElement("div"); box.className = "ticks";
       for (const r of rs) {
         const b = document.createElement("button");
-        b.className = "tick"; b.type = "button"; b.setAttribute("aria-pressed", "false");
+        b.type = "button"; b.className = "tick in"; b.style.setProperty("--i", i++);
+        b.setAttribute("aria-pressed", "false");
         b.setAttribute("aria-label", `${r.t}. Experts: ${r.expert}. Model: ${r.llm}.`);
-        b.innerHTML = `<i class="v-${r.expert}"></i><em class="v-${r.llm}"></em>`;
+        b.innerHTML = `<b class="v-${r.expert}"></b><em class="v-${r.llm}"></em>`;
         b.addEventListener("click", () => show(r, b));
-        ticks.appendChild(b);
-        if (!first && r.expert === r.llm && r.expert === "questioned" && r.q) first = [r, b];
+        b.dataset.differ = r.expert !== r.llm ? "1" : "0";
+        box.appendChild(b); ticks.push(b);
+        if (!first && r.h === "biotic_resistance" && r.expert === r.llm && r.expert === "supported" && r.q && r.design === "experimental") first = [r, b];
       }
-      g.appendChild(ticks); wrap.appendChild(g);
+      g.appendChild(box); wrap.appendChild(g);
     }
     root.appendChild(wrap);
   }
   if (first) show(...first);
-}).catch(() => {
-  record.textContent = "The study list could not be loaded. Open studies.json in the repository to see the records.";
-});
+  document.querySelectorAll(".seg button").forEach(btn => btn.addEventListener("click", () => {
+    document.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", String(x === btn)));
+    const only = btn.dataset.f === "differ";
+    ticks.forEach(t => t.classList.toggle("dim", only && t.dataset.differ === "0"));
+  }));
+}
+
+function bars(el, items) {
+  el.innerHTML = items.map(([label, v, cls]) => `
+    <div class="bar"><span>${label}</span><div class="track"><div class="fill ${cls || ""}" data-w="${v * 100}"></div></div><span class="val">${pct(v)}</span></div>`).join("");
+}
+
+function buildResults(m) {
+  const fig = [
+    [pct(m.accuracy.claims), `of ${m.accuracy.n} verdicts match the experts (always guessing the most common label: ${pct(m.accuracy.majority)})`],
+    [(m.provenance.quotes_verbatim_after_check * 100).toFixed(1) + "%", `of ${m.provenance.claims} evidence quotes appear word for word in the abstract`],
+    [pct(m.design_agreement.agreement), "of study designs read correctly from the abstract"],
+    ["κ " + m.judge.cohen_kappa.toFixed(2), "agreement of an LLM judge with the expert check, barely above chance"],
+  ];
+  document.getElementById("figures").innerHTML = fig.map(([n, t]) => `<div class="fig"><span class="num">${n}</span><p>${t}</p></div>`).join("");
+  bars(document.getElementById("accbars"), [
+    ["Most common label", m.accuracy.majority, "muted"], ["Verdict directly", m.accuracy.direct], ["Claims first", m.accuracy.claims]]);
+  bars(document.getElementById("judgebars"), [
+    ["Judge says correct", m.judge.judge_says_correct, "warn"], ["Actually correct", m.judge.actually_correct]]);
+
+  // dumbbell chart
+  const W = 760, rowH = 40, top = 30, left = 190, right = 30;
+  const rows = [];
+  for (const h of ["enemy_release", "biotic_resistance"]) for (const src of ["expert", "llm"]) rows.push([h, src]);
+  const H = top + rows.length * rowH + 34, x = v => left + v * (W - left - right);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Support by study design for experts and model">`;
+  for (const t of [0, .25, .5, .75, 1]) svg += `<line x1="${x(t)}" x2="${x(t)}" y1="${top - 12}" y2="${H - 30}" stroke="var(--rule)"/><text x="${x(t)}" y="${H - 10}" text-anchor="middle" font-size="12">${t * 100}%</text>`;
+  rows.forEach(([h, src], k) => {
+    const d = m.design_effect[h][src], y = top + k * rowH + rowH / 2;
+    const e = d.experimental[0] / (d.experimental[0] + d.experimental[1]);
+    const o = d.observational[0] / (d.observational[0] + d.observational[1]);
+    if (src === "expert") svg += `<text x="0" y="${y + 4}" class="lbl" font-size="13">${HYP[h]}</text>`;
+    svg += `<text x="${left - 14}" y="${y + 4}" text-anchor="end" font-size="12">${src === "expert" ? "Experts" : "Model"}</text>`;
+    svg += `<line x1="${x(Math.min(e, o))}" x2="${x(Math.max(e, o))}" y1="${y}" y2="${y}" stroke="var(--river)" stroke-width="3" stroke-opacity="${src === "expert" ? .9 : .45}"/>`;
+    svg += `<circle cx="${x(e)}" cy="${y}" r="7" fill="var(--river)" fill-opacity="${src === "expert" ? 1 : .55}"><title>Experimental: ${d.experimental[0]} of ${d.experimental[0] + d.experimental[1]}</title></circle>`;
+    svg += `<circle cx="${x(o)}" cy="${y}" r="6.5" fill="var(--sheet)" stroke="var(--river)" stroke-width="2.5" stroke-opacity="${src === "expert" ? 1 : .55}"><title>Observational: ${d.observational[0]} of ${d.observational[0] + d.observational[1]}</title></circle>`;
+    svg += `<text x="${x(e)}" y="${y - 12}" text-anchor="middle" font-size="11">${pct(e)}</text><text x="${x(o)}" y="${y - 12}" text-anchor="middle" font-size="11">${pct(o)}</text>`;
+    if (k === 1) svg += `<line x1="0" x2="${W}" y1="${y + rowH / 2 + 2}" y2="${y + rowH / 2 + 2}" stroke="var(--rule)" stroke-dasharray="3 4"/>`;
+  });
+  document.getElementById("dumbbell").innerHTML = svg + "</svg>";
+
+  // sign bar
+  const ep = m.edges.find(e => e.from === "enemy_pressure" && e.to === "invader_performance");
+  const parts = [["increases", "var(--questioned)"], ["decreases", "var(--supported)"], ["no_effect", "var(--undecided)"], ["unclear", "var(--rule)"]];
+  document.getElementById("dirbar").innerHTML = parts.filter(([k]) => ep.dirs[k]).map(([k, c]) =>
+    `<span style="background:${c};flex:${ep.dirs[k]}" title="${k.replace("_", " ")}: ${ep.dirs[k]}">${k.replace("_", " ")} ${ep.dirs[k]}</span>`).join("");
+  buildGraph(m.edges);
+}
+
+function buildGraph(edges) {
+  const wrap = document.getElementById("graphwrap"), tip = document.getElementById("tip");
+  const causes = [...new Set(edges.map(e => e.from))], effects = [...new Set(edges.map(e => e.to))];
+  const W = 900, rowGap = 52, top = 26, nodeW = 196, nodeH = 34;
+  const H = top * 2 + Math.max(causes.length, effects.length) * rowGap;
+  const yOf = (list, n) => top + list.indexOf(n) * rowGap + (Math.max(causes.length, effects.length) - list.length) * rowGap / 2;
+  const maxN = Math.max(...edges.map(e => e.n));
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Causal claims linking factors to outcomes">`;
+  svg += `<text x="0" y="14" font-size="12">Factor</text><text x="${W}" y="14" font-size="12" text-anchor="end">Outcome</text>`;
+  edges.forEach((e, k) => {
+    const y1 = yOf(causes, e.from) + nodeH / 2, y2 = yOf(effects, e.to) + nodeH / 2, x1 = nodeW, x2 = W - nodeW;
+    svg += `<path class="edge" data-k="${k}" data-from="${e.from}" data-to="${e.to}" d="M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}" stroke-width="${1.5 + 12 * e.n / maxN}"/>`;
+  });
+  const node = (n, x, y, side) => `<g class="node" data-n="${n}" data-side="${side}" tabindex="0"><rect x="${x}" y="${y}" width="${nodeW}" height="${nodeH}" rx="6"/><text x="${x + 12}" y="${y + 22}">${NODE[n] || n}</text></g>`;
+  causes.forEach(n => svg += node(n, 0, yOf(causes, n), "from"));
+  effects.forEach(n => svg += node(n, W - nodeW, yOf(effects, n), "to"));
+  wrap.insertAdjacentHTML("beforeend", svg + "</svg>");
+  const paths = [...wrap.querySelectorAll("path.edge")], nodes = [...wrap.querySelectorAll(".node")];
+  const fmt = d => ["increases", "decreases", "no_effect", "unclear"].filter(k => d[k]).map(k => `${k.replace("_", " ")} ${d[k]}`).join(", ");
+  const place = ev => {
+    const r = wrap.getBoundingClientRect();
+    const px = (ev.clientX ?? r.left + r.width / 2) - r.left, py = (ev.clientY ?? r.top + 40) - r.top;
+    tip.style.left = Math.min(px + 14, r.width - 270) + "px"; tip.style.top = (py + 14) + "px";
+  };
+  const clear = () => { paths.forEach(p => p.classList.remove("on", "off")); nodes.forEach(n => n.classList.remove("on")); tip.classList.remove("show"); };
+  paths.forEach(p => {
+    const e = edges[p.dataset.k];
+    const on = ev => { clear(); paths.forEach(q => q.classList.add(q === p ? "on" : "off")); tip.innerHTML = `<b>${NODE[e.from]} → ${NODE[e.to]}</b><br>${e.n} studies: ${fmt(e.dirs)}`; tip.classList.add("show"); place(ev); };
+    p.addEventListener("mouseenter", on); p.addEventListener("mousemove", place); p.addEventListener("click", on); p.addEventListener("mouseleave", clear);
+  });
+  nodes.forEach(g => {
+    const on = ev => {
+      clear(); g.classList.add("on");
+      const mine = paths.filter(p => p.dataset[g.dataset.side] === g.dataset.n);
+      paths.forEach(p => p.classList.add(mine.includes(p) ? "on" : "off"));
+      const total = mine.reduce((s, p) => s + edges[p.dataset.k].n, 0);
+      tip.innerHTML = `<b>${NODE[g.dataset.n]}</b><br>${mine.length} links, ${total} study mentions`; tip.classList.add("show"); place(ev);
+    };
+    g.addEventListener("mouseenter", on); g.addEventListener("focus", on); g.addEventListener("click", on);
+    g.addEventListener("mouseleave", clear); g.addEventListener("blur", clear);
+  });
+}
+
+function animateBars() {
+  const io = new IntersectionObserver(entries => entries.forEach(en => {
+    if (!en.isIntersecting) return;
+    en.target.querySelectorAll(".fill").forEach(f => f.style.width = f.dataset.w + "%");
+    io.unobserve(en.target);
+  }), { threshold: 0.3 });
+  document.querySelectorAll(".bars").forEach(b => io.observe(b));
+}
+
+Promise.all([fetch("studies.json").then(r => r.json()), fetch("metrics.json").then(r => r.json())])
+  .then(([rows, m]) => { buildLedger(rows); buildResults(m); animateBars(); })
+  .catch(() => { record.textContent = "The study data could not be loaded. The same records are in the repository under docs/studies.json."; });
 </script>
 </body>
 </html>

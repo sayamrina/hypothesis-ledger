@@ -19,3 +19,18 @@ for item_id, rec in claims.items():
     })
 (ROOT / "docs" / "studies.json").write_text(json.dumps(rows, ensure_ascii=False))
 print(len(rows))
+
+# summary numbers and graph edges for the charts on the page
+m = json.loads((ROOT / "results" / "metrics.json").read_text())
+design = {h: {src: {"experimental": v["experimental [sup, que]"], "observational": v["observational [sup, que]"],
+                    "p": v["p_fisher"]} for src, v in row.items()} for h, row in m["design_effect"].items()}
+edges = [{"from": k.split(" -> ")[0], "to": k.split(" -> ")[1], "n": sum(v.values()), "dirs": v}
+         for k, v in m["causal_graph_edges"].items()]
+page = {
+    "accuracy": {"claims": m["claims"]["accuracy"], "direct": m["direct"]["accuracy"],
+                 "majority": m["claims"]["majority_baseline"], "n": m["claims"]["n"],
+                 "macro_f1": {"claims": m["claims"]["macro_f1"], "direct": m["direct"]["macro_f1"]}},
+    "provenance": m["provenance"], "design_agreement": m["design_agreement"],
+    "judge": m["llm_judge"], "design_effect": design, "edges": edges,
+}
+(ROOT / "docs" / "metrics.json").write_text(json.dumps(page, indent=1))

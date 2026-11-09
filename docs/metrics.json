@@ -1,0 +1,289 @@
+{
+ "accuracy": {
+  "claims": 0.748,
+  "direct": 0.756,
+  "majority": 0.427,
+  "n": 131,
+  "macro_f1": {
+   "claims": 0.662,
+   "direct": 0.599
+  }
+ },
+ "provenance": {
+  "claims": 450,
+  "claims_per_study": 3.12,
+  "studies_needing_correction_round": 11,
+  "quotes_verbatim_after_check": 0.993
+ },
+ "design_agreement": {
+  "n": 133,
+  "agreement": 0.91
+ },
+ "judge": {
+  "n": 131,
+  "judge_says_correct": 0.855,
+  "actually_correct": 0.748,
+  "agreement_with_expert_check": 0.74,
+  "cohen_kappa": 0.199
+ },
+ "design_effect": {
+  "enemy_release": {
+   "expert": {
+    "experimental": [
+     4,
+     9
+    ],
+    "observational": [
+     25,
+     9
+    ],
+    "p": 0.017
+   },
+   "llm": {
+    "experimental": [
+     6,
+     8
+    ],
+    "observational": [
+     24,
+     11
+    ],
+    "p": 0.116
+   }
+  },
+  "biotic_resistance": {
+   "expert": {
+    "experimental": [
+     16,
+     12
+    ],
+    "observational": [
+     6,
+     21
+    ],
+    "p": 0.013
+   },
+   "llm": {
+    "experimental": [
+     18,
+     9
+    ],
+    "observational": [
+     11,
+     16
+    ],
+    "p": 0.101
+   }
+  }
+ },
+ "edges": [
+  {
+   "from": "native_diversity",
+   "to": "invader_abundance_or_spread",
+   "n": 64,
+   "dirs": {
+    "increases": 26,
+    "decreases": 24,
+    "no_effect": 12,
+    "unclear": 2
+   }
+  },
+  {
+   "from": "enemy_pressure",
+   "to": "invader_performance",
+   "n": 63,
+   "dirs": {
+    "increases": 30,
+    "decreases": 21,
+    "no_effect": 11,
+    "unclear": 1
+   }
+  },
+  {
+   "from": "enemy_pressure",
+   "to": "invader_abundance_or_spread",
+   "n": 36,
+   "dirs": {
+    "no_effect": 7,
+    "increases": 22,
+    "decreases": 6,
+    "unclear": 1
+   }
+  },
+  {
+   "from": "native_diversity",
+   "to": "invader_establishment",
+   "n": 30,
+   "dirs": {
+    "increases": 15,
+    "no_effect": 6,
+    "unclear": 2,
+    "decreases": 7
+   }
+  },
+  {
+   "from": "resources_or_environment",
+   "to": "invader_abundance_or_spread",
+   "n": 23,
+   "dirs": {
+    "increases": 16,
+    "no_effect": 4,
+    "decreases": 3
+   }
+  },
+  {
+   "from": "resources_or_environment",
+   "to": "invader_performance",
+   "n": 19,
+   "dirs": {
+    "decreases": 5,
+    "increases": 10,
+    "no_effect": 4
+   }
+  },
+  {
+   "from": "resources_or_environment",
+   "to": "invader_establishment",
+   "n": 17,
+   "dirs": {
+    "increases": 8,
+    "decreases": 7,
+    "no_effect": 1,
+    "unclear": 1
+   }
+  },
+  {
+   "from": "enemy_pressure",
+   "to": "invader_establishment",
+   "n": 12,
+   "dirs": {
+    "increases": 5,
+    "decreases": 3,
+    "no_effect": 3,
+    "unclear": 1
+   }
+  },
+  {
+   "from": "native_diversity",
+   "to": "invader_performance",
+   "n": 11,
+   "dirs": {
+    "decreases": 7,
+    "increases": 3,
+    "unclear": 1
+   }
+  },
+  {
+   "from": "native_competitors",
+   "to": "invader_abundance_or_spread",
+   "n": 11,
+   "dirs": {
+    "no_effect": 4,
+    "increases": 4,
+    "decreases": 3
+   }
+  },
+  {
+   "from": "enemy_pressure",
+   "to": "native_community",
+   "n": 10,
+   "dirs": {
+    "increases": 5,
+    "decreases": 3,
+    "no_effect": 2
+   }
+  },
+  {
+   "from": "native_competitors",
+   "to": "invader_establishment",
+   "n": 6,
+   "dirs": {
+    "unclear": 2,
+    "no_effect": 1,
+    "decreases": 3
+   }
+  },
+  {
+   "from": "native_diversity",
+   "to": "resources_or_environment",
+   "n": 5,
+   "dirs": {
+    "decreases": 3,
+    "increases": 2
+   }
+  },
+  {
+   "from": "invader_establishment",
+   "to": "invader_abundance_or_spread",
+   "n": 5,
+   "dirs": {
+    "no_effect": 1,
+    "increases": 4
+   }
+  },
+  {
+   "from": "invader_abundance_or_spread",
+   "to": "native_community",
+   "n": 5,
+   "dirs": {
+    "increases": 2,
+    "decreases": 2,
+    "no_effect": 1
+   }
+  },
+  {
+   "from": "resources_or_environment",
+   "to": "native_diversity",
+   "n": 4,
+   "dirs": {
+    "decreases": 3,
+    "increases": 1
+   }
+  },
+  {
+   "from": "resources_or_environment",
+   "to": "native_community",
+   "n": 4,
+   "dirs": {
+    "increases": 2,
+    "no_effect": 2
+   }
+  },
+  {
+   "from": "native_community",
+   "to": "invader_performance",
+   "n": 3,
+   "dirs": {
+    "decreases": 1,
+    "increases": 2
+   }
+  },
+  {
+   "from": "native_competitors",
+   "to": "invader_performance",
+   "n": 3,
+   "dirs": {
+    "decreases": 2,
+    "increases": 1
+   }
+  },
+  {
+   "from": "invader_abundance_or_spread",
+   "to": "native_diversity",
+   "n": 3,
+   "dirs": {
+    "decreases": 3
+   }
+  },
+  {
+   "from": "resources_or_environment",
+   "to": "enemy_pressure",
+   "n": 3,
+   "dirs": {
+    "increases": 1,
+    "no_effect": 1,
+    "decreases": 1
+   }
+  }
+ ]
+}

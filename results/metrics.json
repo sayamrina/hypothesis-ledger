@@ -1,0 +1,297 @@
+{
+  "items": 144,
+  "gold": {
+    "supported": 55,
+    "questioned": 56,
+    "mixed": 13,
+    "undecided": 20
+  },
+  "claims": {
+    "n": 131,
+    "accuracy": 0.748,
+    "macro_f1": 0.662,
+    "majority_baseline": 0.427,
+    "confusion (rows=expert, cols=LLM; supported, questioned, undecided)": [
+      [
+        50,
+        2,
+        3
+      ],
+      [
+        6,
+        41,
+        9
+      ],
+      [
+        7,
+        6,
+        7
+      ]
+    ]
+  },
+  "direct": {
+    "n": 131,
+    "accuracy": 0.756,
+    "macro_f1": 0.599,
+    "majority_baseline": 0.427,
+    "confusion (rows=expert, cols=LLM; supported, questioned, undecided)": [
+      [
+        50,
+        4,
+        1
+      ],
+      [
+        7,
+        47,
+        2
+      ],
+      [
+        10,
+        8,
+        2
+      ]
+    ]
+  },
+  "direct_vs_claims": {
+    "only_direct_correct": 6,
+    "only_claims_correct": 5,
+    "p_exact": 1.0
+  },
+  "provenance": {
+    "claims": 450,
+    "claims_per_study": 3.12,
+    "studies_needing_correction_round": 11,
+    "quotes_verbatim_after_check": 0.993
+  },
+  "design_agreement": {
+    "n": 133,
+    "agreement": 0.91
+  },
+  "support_share": {
+    "biotic_resistance | all": {
+      "n": 68,
+      "expert": 0.42,
+      "llm": 0.55
+    },
+    "biotic_resistance | habitat=terrestrial": {
+      "n": 56,
+      "expert": 0.43,
+      "llm": 0.58
+    },
+    "biotic_resistance | method=Experimental": {
+      "n": 31,
+      "expert": 0.57,
+      "llm": 0.67
+    },
+    "biotic_resistance | method=Observational or correlational": {
+      "n": 35,
+      "expert": 0.22,
+      "llm": 0.41
+    },
+    "enemy_release | all": {
+      "n": 63,
+      "expert": 0.57,
+      "llm": 0.57
+    },
+    "enemy_release | habitat=terrestrial": {
+      "n": 56,
+      "expert": 0.56,
+      "llm": 0.56
+    },
+    "enemy_release | method=Experimental": {
+      "n": 15,
+      "expert": 0.31,
+      "llm": 0.43
+    },
+    "enemy_release | method=Observational or correlational": {
+      "n": 41,
+      "expert": 0.74,
+      "llm": 0.69
+    },
+    "enemy_release | method=mixed": {
+      "n": 5,
+      "expert": 0.4,
+      "llm": 0.4
+    }
+  },
+  "design_effect": {
+    "enemy_release": {
+      "expert": {
+        "experimental [sup, que]": [
+          4,
+          9
+        ],
+        "observational [sup, que]": [
+          25,
+          9
+        ],
+        "odds_ratio": 0.16,
+        "p_fisher": 0.017
+      },
+      "llm": {
+        "experimental [sup, que]": [
+          6,
+          8
+        ],
+        "observational [sup, que]": [
+          24,
+          11
+        ],
+        "odds_ratio": 0.34,
+        "p_fisher": 0.116
+      }
+    },
+    "biotic_resistance": {
+      "expert": {
+        "experimental [sup, que]": [
+          16,
+          12
+        ],
+        "observational [sup, que]": [
+          6,
+          21
+        ],
+        "odds_ratio": 4.67,
+        "p_fisher": 0.013
+      },
+      "llm": {
+        "experimental [sup, que]": [
+          18,
+          9
+        ],
+        "observational [sup, que]": [
+          11,
+          16
+        ],
+        "odds_ratio": 2.91,
+        "p_fisher": 0.101
+      }
+    }
+  },
+  "llm_judge": {
+    "n": 131,
+    "judge_says_correct": 0.855,
+    "actually_correct": 0.748,
+    "agreement_with_expert_check": 0.74,
+    "cohen_kappa": 0.199
+  },
+  "sign_check": {
+    "enemy_pressure -> invader_performance (hypothesis predicts decreases)": {
+      "increases": 30,
+      "decreases": 21,
+      "no_effect": 11,
+      "unclear": 1
+    },
+    "native_diversity -> invader_establishment (hypothesis predicts decreases)": {
+      "increases": 15,
+      "no_effect": 6,
+      "unclear": 2,
+      "decreases": 7
+    }
+  },
+  "causal_graph_edges": {
+    "native_diversity -> invader_abundance_or_spread": {
+      "increases": 26,
+      "decreases": 24,
+      "no_effect": 12,
+      "unclear": 2
+    },
+    "enemy_pressure -> invader_performance": {
+      "increases": 30,
+      "decreases": 21,
+      "no_effect": 11,
+      "unclear": 1
+    },
+    "enemy_pressure -> invader_abundance_or_spread": {
+      "no_effect": 7,
+      "increases": 22,
+      "decreases": 6,
+      "unclear": 1
+    },
+    "native_diversity -> invader_establishment": {
+      "increases": 15,
+      "no_effect": 6,
+      "unclear": 2,
+      "decreases": 7
+    },
+    "resources_or_environment -> invader_abundance_or_spread": {
+      "increases": 16,
+      "no_effect": 4,
+      "decreases": 3
+    },
+    "resources_or_environment -> invader_performance": {
+      "decreases": 5,
+      "increases": 10,
+      "no_effect": 4
+    },
+    "resources_or_environment -> invader_establishment": {
+      "increases": 8,
+      "decreases": 7,
+      "no_effect": 1,
+      "unclear": 1
+    },
+    "enemy_pressure -> invader_establishment": {
+      "increases": 5,
+      "decreases": 3,
+      "no_effect": 3,
+      "unclear": 1
+    },
+    "native_diversity -> invader_performance": {
+      "decreases": 7,
+      "increases": 3,
+      "unclear": 1
+    },
+    "native_competitors -> invader_abundance_or_spread": {
+      "no_effect": 4,
+      "increases": 4,
+      "decreases": 3
+    },
+    "enemy_pressure -> native_community": {
+      "increases": 5,
+      "decreases": 3,
+      "no_effect": 2
+    },
+    "native_competitors -> invader_establishment": {
+      "unclear": 2,
+      "no_effect": 1,
+      "decreases": 3
+    },
+    "native_diversity -> resources_or_environment": {
+      "decreases": 3,
+      "increases": 2
+    },
+    "invader_establishment -> invader_abundance_or_spread": {
+      "no_effect": 1,
+      "increases": 4
+    },
+    "invader_abundance_or_spread -> native_community": {
+      "increases": 2,
+      "decreases": 2,
+      "no_effect": 1
+    },
+    "resources_or_environment -> native_diversity": {
+      "decreases": 3,
+      "increases": 1
+    },
+    "resources_or_environment -> native_community": {
+      "increases": 2,
+      "no_effect": 2
+    },
+    "native_community -> invader_performance": {
+      "decreases": 1,
+      "increases": 2
+    },
+    "native_competitors -> invader_performance": {
+      "decreases": 2,
+      "increases": 1
+    },
+    "invader_abundance_or_spread -> native_diversity": {
+      "decreases": 3
+    },
+    "resources_or_environment -> enemy_pressure": {
+      "increases": 1,
+      "no_effect": 1,
+      "decreases": 1
+    }
+  }
+}

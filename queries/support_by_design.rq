@@ -1,0 +1,11 @@
+# How often each hypothesis is supported, split by the study design the LLM read from the abstract.
+PREFIX hl:   <https://sayamrina.github.io/hypothesis-ledger/ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?hypothesis ?design ?verdict (COUNT(?a) AS ?studies)
+WHERE {
+  ?a a hl:Assessment ; hl:hypothesis ?h ; hl:design ?design ; hl:verdict ?verdict .
+  ?h rdfs:label ?hypothesis .
+}
+GROUP BY ?hypothesis ?design ?verdict
+ORDER BY ?hypothesis ?design ?verdict

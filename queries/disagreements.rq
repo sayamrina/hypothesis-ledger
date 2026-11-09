@@ -1,0 +1,14 @@
+# Studies where the LLM verdict differs from the expert verdict, with the quote it relied on.
+PREFIX hl:      <https://sayamrina.github.io/hypothesis-ledger/ns#>
+PREFIX prov:    <http://www.w3.org/ns/prov#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+
+SELECT ?title ?llm ?expert (SAMPLE(?quote) AS ?evidence)
+WHERE {
+  ?a a hl:Assessment ; hl:study ?s ; hl:verdict ?llm ; hl:expertVerdict ?expert .
+  FILTER (?llm != ?expert)
+  ?s dcterms:title ?title .
+  OPTIONAL { ?a hl:basedOn ?c . ?c prov:value ?quote }
+}
+GROUP BY ?title ?llm ?expert
+ORDER BY ?title

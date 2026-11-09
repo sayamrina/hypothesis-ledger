@@ -1,0 +1,9 @@
+# Claims whose evidence quote could not be found verbatim in the abstract (to be checked by a person).
+PREFIX hl:   <https://sayamrina.github.io/hypothesis-ledger/ns#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+
+SELECT ?claim ?cause ?effect ?quote ?source
+WHERE {
+  ?claim a hl:CausalClaim ; hl:quoteVerified false ; hl:cause ?cause ; hl:effect ?effect ;
+         prov:value ?quote ; prov:wasDerivedFrom ?source .
+}

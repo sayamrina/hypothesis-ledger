@@ -1,0 +1,24 @@
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix hl:   <https://sayamrina.github.io/hypothesis-ledger/ns#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+# Every causal claim must say where it comes from: one quote, one source, one extraction run.
+hl:CausalClaimShape a sh:NodeShape ;
+    sh:targetClass hl:CausalClaim ;
+    sh:property [ sh:path prov:value ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:minLength 10 ] ;
+    sh:property [ sh:path prov:wasDerivedFrom ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path prov:wasGeneratedBy ; sh:minCount 1 ] ;
+    sh:property [ sh:path hl:direction ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( hl:increases hl:decreases hl:no_effect hl:unclear ) ] ;
+    sh:property [ sh:path hl:quoteVerified ; sh:datatype xsd:boolean ; sh:minCount 1 ] .
+
+# Every assessment links one study to one hypothesis with one verdict.
+hl:AssessmentShape a sh:NodeShape ;
+    sh:targetClass hl:Assessment ;
+    sh:property [ sh:path hl:study ; sh:class hl:Study ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path hl:hypothesis ; sh:class hl:Hypothesis ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path hl:verdict ; sh:minCount 1 ; sh:maxCount 1 ;
+                  sh:in ( hl:supported hl:questioned hl:undecided ) ] ;
+    sh:property [ sh:path hl:expertVerdict ; sh:maxCount 1 ;
+                  sh:in ( hl:supported hl:questioned hl:undecided ) ] .

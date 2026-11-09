@@ -1,0 +1,11 @@
+requests
+openai>=1.40
+pydantic>=2
+rdflib>=7
+pyshacl
+networkx
+pandas
+scikit-learn
+scipy
+matplotlib
+pytest
